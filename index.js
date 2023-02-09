@@ -5,8 +5,12 @@ const { execSync } = require('child_process');
 
 const ixJsPath1 = path.join(__dirname, '../iX/server/.minified/js/');
 const ixJsPath2 = path.join(__dirname, '../iX/scripts/js/');
-const myPath1 = path.join(__dirname, 'scr/js/');
-const myPath2 = path.join(__dirname, 'scripts/js/');
+const myJsPath1 = path.join(__dirname, 'scr/js/');
+const myJsPath2 = path.join(__dirname, 'scripts/js/');
+const ixCssPath1 = path.join(__dirname, '../iX/server/.minified/css/');
+const ixCssPath2 = path.join(__dirname, '../iX/scripts/css/');
+const myCssPath1 = path.join(__dirname, 'scr/js/');
+const myCssPath2 = path.join(__dirname, 'scripts/js/');
 
 const exec = (command) => {
   try {
@@ -43,24 +47,25 @@ const walkdir = (_dir, type=1) => {
   return filepathList;
 };
 
-try{fs.rmdirSync(myPath1, {recursive: true})}catch{};
-try{fs.rmdirSync(myPath2, {recursive: true})}catch{};
+try{fs.rmdirSync(myJsPath1, {recursive: true})}catch{};
+try{fs.rmdirSync(myJsPath2, {recursive: true})}catch{};
+try{fs.rmdirSync(myCssPath1, {recursive: true})}catch{};
+try{fs.rmdirSync(myCssPath2, {recursive: true})}catch{};
 
-walkdir(ixJsPath1).forEach(sourceFilepath => {
-  const oFilepath1 = sourceFilepath.replace(ixJsPath1, myPath1);
-  const oDirname1 = path.dirname(oFilepath1);
-  if (!fs.existsSync(oDirname1)) fs.mkdirSync(oDirname1, {recursive: true});
-  fs.copyFileSync(sourceFilepath, oFilepath1);
-  console.log('copied:', sourceFilepath);
-});
+const fetchScripts = (scriptsPath, savedPath) => {
+  walkdir(scriptsPath).forEach(sourceFilepath => {
+    const oFilepath1 = sourceFilepath.replace(scriptsPath, savedPath);
+    const oDirname1 = path.dirname(oFilepath1);
+    if (!fs.existsSync(oDirname1)) fs.mkdirSync(oDirname1, {recursive: true});
+    fs.copyFileSync(sourceFilepath, oFilepath1);
+    console.log('copied:', sourceFilepath);
+  });
+}
 
-walkdir(ixJsPath2).forEach(sourceFilepath => {
-  const oFilepath2 = sourceFilepath.replace(ixJsPath2, myPath2);
-  const oDirname2 = path.dirname(oFilepath2);
-  if (!fs.existsSync(oDirname2)) fs.mkdirSync(oDirname2, {recursive: true});
-  fs.copyFileSync(sourceFilepath, oFilepath2);
-  console.log('copied:', sourceFilepath);
-});
+fetchScripts(ixJsPath1, myJsPath1);
+fetchScripts(ixJsPath2, myJsPath2);
+fetchScripts(ixCssPath1, myCssPath1);
+fetchScripts(ixCssPath2, myCssPath2);
 
 exec(`git pull`);
 exec(`git add .`);

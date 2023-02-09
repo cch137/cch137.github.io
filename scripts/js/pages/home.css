@@ -1,0 +1,125 @@
+.v-gallery-content {
+  width: 1200px !important;
+}
+
+.v-gallery-body {
+  user-select: none;
+  flex-wrap: wrap !important;
+  align-items: flex-start;
+  margin-bottom: 48px;
+}
+
+.v-gallery-title {
+  font-size: 40px;
+  text-align: center;
+  margin: 48px 0 0px;
+}
+
+.v-gallery-item {
+  display: block;
+  width: 240px;
+  padding: 16px 16px 32px;
+  margin: 16px;
+  text-decoration: none;
+  background-color: var(--theme-color-900);
+  transition: .3s;
+  border-radius: 8px;
+  --thumbn-sz: 200px;
+}
+
+.v-gallery-item:hover {
+  background-color: var(--theme-color-800);
+  box-shadow: 0 0 24px #111;
+  z-index: 999999;
+  filter: brightness(1.25);
+  transform: translate(0, -8px);
+}
+
+.v-gallery-item:hover .item-thumbnail-bg {
+  box-shadow: none !important;
+}
+
+.v-gallery-item .item-thumbnail-bg {
+  height: var(--thumbn-sz);
+  width: var(--thumbn-sz);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: var(--img-shadow);
+  pointer-events: none;
+}
+
+.v-gallery-item .item-thumbnail {
+  height: var(--thumbn-sz);
+  width: var(--thumbn-sz);
+  object-fit: cover;
+}
+
+.v-gallery-item .item-title {
+  margin-top: 8px;
+  font-size: x-large;
+}
+
+.v-gallery-item .item-description {
+  font-size: medium;
+  opacity: .67;
+}
+
+@media screen and (max-width:500px) {
+  .v-gallery-item {
+    width: auto;
+    --thumbn-sz: 240px;
+  }
+  .v-gallery-item .item-title {
+    font-size: x-large !important;
+  }
+  .v-gallery-item .item-description {
+    font-size: large !important;
+  }
+}
+
+#v-view-about-contacts {
+  padding: 0;
+}
+
+#v-view-about-contacts li {
+  list-style-type: none;
+  font-size: large;
+}
+
+#v-view-about-contacts a {
+  padding: 8px;
+  transition: .3s;
+  border-radius: 8px;
+}
+
+#v-view-about-contacts a:hover {
+  background-color: var(--theme-color-900);
+  filter: brightness(1.33);
+}
+
+.v-view-about-ico {
+  height: 24px;
+  width: 24px;
+  margin-right: 8px;
+  transition: .3s;
+}
+
+.v-hp-view-btn {
+  background-color: #044;
+  color: #fffe;
+  border-radius: 8px;
+  width: fit-content;
+  font-size: large;
+  margin-top: 24px;
+  padding: 16px 32px;
+  cursor: pointer;
+  user-select: none;
+  transition: .3s;
+  box-shadow: var(--img-shadow);
+  text-decoration: none;
+}
+
+.v-hp-view-btn:hover {
+  background-color: #185a5a;
+  color: #fff;
+}
