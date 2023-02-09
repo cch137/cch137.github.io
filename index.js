@@ -9,8 +9,8 @@ const myJsPath1 = path.join(__dirname, 'scr/js/');
 const myJsPath2 = path.join(__dirname, 'scripts/js/');
 const ixCssPath1 = path.join(__dirname, '../iX/server/.minified/css/');
 const ixCssPath2 = path.join(__dirname, '../iX/scripts/css/');
-const myCssPath1 = path.join(__dirname, 'scr/js/');
-const myCssPath2 = path.join(__dirname, 'scripts/js/');
+const myCssPath1 = path.join(__dirname, 'scr/css/');
+const myCssPath2 = path.join(__dirname, 'scripts/css/');
 
 const exec = (command) => {
   try {
