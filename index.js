@@ -47,10 +47,9 @@ const walkdir = (_dir, type=1) => {
   return filepathList;
 };
 
-try{fs.rmdirSync(myJsPath1, {recursive: true})}catch{};
-try{fs.rmdirSync(myJsPath2, {recursive: true})}catch{};
-try{fs.rmdirSync(myCssPath1, {recursive: true})}catch{};
-try{fs.rmdirSync(myCssPath2, {recursive: true})}catch{};
+[myJsPath1, myJsPath2, myCssPath1, myCssPath2].forEach(p => {
+  try{fs.rmSync(p, {recursive: true})}catch{};
+});
 
 const fetchScripts = (scriptsPath, savedPath) => {
   walkdir(scriptsPath).forEach(sourceFilepath => {
