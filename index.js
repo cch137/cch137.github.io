@@ -53,6 +53,7 @@ const walkdir = (_dir, type=1) => {
 
 const fetchScripts = (scriptsPath, savedPath) => {
   walkdir(scriptsPath).forEach(sourceFilepath => {
+    console.log(sourceFilepath);
     if (/\/admin\//.test(sourceFilepath)) return;
     const oFilepath1 = sourceFilepath.replace(scriptsPath, savedPath);
     const oDirname1 = path.dirname(oFilepath1);
