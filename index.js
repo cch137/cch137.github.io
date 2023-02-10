@@ -53,7 +53,7 @@ const walkdir = (_dir, type=1) => {
 
 const fetchScripts = (scriptsPath, savedPath) => {
   walkdir(scriptsPath).forEach(sourceFilepath => {
-    if (/\/admin\//i.test(sourceFilepath)) return;
+    if (/\\admin\\/i.test(sourceFilepath)) return;
     const oFilepath1 = sourceFilepath.replace(scriptsPath, savedPath);
     const oDirname1 = path.dirname(oFilepath1);
     if (!fs.existsSync(oDirname1)) fs.mkdirSync(oDirname1, {recursive: true});
