@@ -140,16 +140,16 @@ const ix = (() => {
       };
       ixEl.collections = {};
       const elData = (el) => {
-        if (!ix.el.collections[el]) {
-          ix.el.collections[el] = {
+        if (!ixEl.collections[el]) {
+          ixEl.collections[el] = {
             listners: {}
           };
         }
-        return ix.el.collections[el];
+        return ixEl.collections[el];
       };
-      ixEl.removeData = (el) => {delete ix.el.collections[el]};
+      ixEl.removeData = (el) => {delete ixEl.collections[el]};
       ixEl.addListener = (el, eventName, handler) => {
-        // if (ix.el.getListener(el, eventName)) ix.el.rmvListener(el, eventName);
+        // if (ixEl.getListener(el, eventName)) ixEl.rmvListener(el, eventName);
         elData(el).listners[eventName] = handler;
         el.addEventListener(eventName, elData(el).listners[eventName]);
       };
@@ -162,7 +162,8 @@ const ix = (() => {
         if (el) return el.listners[eventName];
         return undefined;
       }
-      ixEl.getAllListeners = (el) => ix.el.collections[el].listners;
+      ixEl.getAllListeners = (el) => ixEl.collections[el].listners;
+      ixEl.isHide = (el) => el.classList.contains('hidden');
       ixEl.hide = (el) => el.classList.add('hidden');
       ixEl.show = (el) => el.classList.remove('hidden');
       ixEl.lock = (el) => el.classList.add('locked');
@@ -170,7 +171,7 @@ const ix = (() => {
       ixEl.childrenR = (el) => {
         const elements = [...el.children];
         const _elements = [el, ...elements];
-        for (const i of elements) ix.el.childrenR(i).forEach(j => _elements.push(j));
+        for (const i of elements) ixEl.childrenR(i).forEach(j => _elements.push(j));
         return _elements;
       }
       ixEl.destroyChildren = (el) => {
@@ -178,7 +179,7 @@ const ix = (() => {
         while (elements.length) elements.pop().remove();
       }
       ixEl.destroy = (el) => {
-        ix.el.destroyChildren(el);
+        ixEl.destroyChildren(el);
         el.remove();
       }
       ixEl.byId = (id) => doc.getElementById(id);
@@ -190,24 +191,24 @@ const ix = (() => {
         hintTextAfter: 'Copied!',
         hintDuration: 1500
       }) => {
-        ix.el.addListener(btnEl, 'click', () => {
+        ixEl.addListener(btnEl, 'click', () => {
           ix.cli.copy(typeof text === 'function' ? text() : text);
           if (options.hintEl === true || options.hintEl === 1) options.hintEl = btnEl;
           if (options.hintEl) {
             options.hintEl.innerText = options.hintTextAfter || 'Copied!';
             setTimeout(() => {
               options.hintEl.innerText = options.hintText || 'Copy text';
-              ix.el.unlock(btnEl);
+              ixEl.unlock(btnEl);
             }, options.hintDuration || 1500);
           };
           if (options.focusEl) try {options.focusEl.focus()} catch {};
-          ix.el.lock(btnEl);
+          ixEl.lock(btnEl);
         });
       }
       ixEl.setupSwitch = (el, handler, defaultValue) => {
         el.classList.add('v-switch');
         if (defaultValue) el.classList.add('on');
-        ix.el.addListener(el, 'click', () => {
+        ixEl.addListener(el, 'click', () => {
           const v = el.classList.contains('on');
           if (v) el.classList.remove('on');
           else el.classList.add('on');
@@ -216,7 +217,7 @@ const ix = (() => {
       }
       ixEl.blockPasteHTML = (el) => {
         try {
-          const onpaste = el.onpaste || ix.el.getListener(el, 'paste');
+          const onpaste = el.onpaste || ixEl.getListener(el, 'paste');
           el.onpaste = (e) => {
             e.preventDefault();
             doc.execCommand('insertText', false, (e.originalEvent || e).clipboardData.getData('text/plain'));
@@ -245,10 +246,10 @@ const ix = (() => {
           for (const link in collectedLinks) {
             if(link == content.substring(i, i + link.length)) {
               if (normalTextCollection !='') {
-                processedElements.push(ix.el('span', {}, [], normalTextCollection ))
+                processedElements.push(ixEl('span', {}, [], normalTextCollection ))
                 normalTextCollection = '';
               }
-              processedElements.push(ix.el('a', {
+              processedElements.push(ixEl('a', {
                 href: collectedLinks[link],
                 target: '_blank',
                 rel: 'noopener noreferrer'
@@ -261,7 +262,7 @@ const ix = (() => {
           if (!foundLink) normalTextCollection += content[i];
         }
         if (normalTextCollection) {
-          processedElements.push(ix.el('span', {} , [], normalTextCollection));
+          processedElements.push(ixEl('span', {} , [], normalTextCollection));
         }
         el.innerHTML = '';
         el.append(...processedElements);
@@ -271,12 +272,12 @@ const ix = (() => {
       ixEl.scrollToTop = (el) => {
         if (el) {
           el.scrollTop = Math.floor(el.scrollTop - el.scrollTop / 16);
-          if (el.scrollTop > 0) setTimeout(ix.el.scrollToTop, 1, el);
+          if (el.scrollTop > 0) setTimeout(ixEl.scrollToTop, 1, el);
         } else {
           elScrollTop = doc.documentElement.scrollTop || doc.body.scrollTop;
           const i = elScrollTop - elScrollTop / 8;
           if (elScrollTop > 0) {
-            win.requestAnimationFrame(ix.el.scrollToTop);
+            win.requestAnimationFrame(ixEl.scrollToTop);
             win.scrollTo(0, i > 1 ? i : 0);
           }
         }
@@ -294,13 +295,13 @@ const ix = (() => {
             setTimeout(() => {
               bgEl.classList.remove('img-loading-bg');
               bgEl.classList.remove('loaded');
-              ix.el.imgLoadAnim.controller.endLoadingProcess(bgEl);
+              ixEl.imgLoadAnim.controller.endLoadingProcess(bgEl);
             }, 500);
           },
           disableLoadingAnim(bgEl) {
             bgEl.style.setProperty('--transition', '0');
             bgEl.classList.remove('img-loading-bg');
-            ix.el.imgLoadAnim.controller.endLoadingProcess(bgEl);
+            ixEl.imgLoadAnim.controller.endLoadingProcess(bgEl);
           }
         },
         setOnloadHandle: (imgBgElement) => {
@@ -308,7 +309,7 @@ const ix = (() => {
           imgBgElement.classList.add('img-loading-processing');
           const img = imgBgElement.getElementsByTagName('img')[0];
           const _next = img.onload;
-          const ctrl = ix.el.imgLoadAnim.controller;
+          const ctrl = ixEl.imgLoadAnim.controller;
           const timeoutId = setTimeout(() => {
             // 修復：當圖片在被設置 onload 前就已經加載完成而沒有執行到 onload 的漏洞
             if (!img.complete) return;
@@ -332,12 +333,12 @@ const ix = (() => {
         }
       }
       const renderIxSvg = (el, expression) => {
-        const attrs = ix.el.getAttrs(el);
+        const attrs = ixEl.getAttrs(el);
         attrs.xmlns = 'http://www.w3.org/2000/svg';
         attrs.viewBox = '0 0 48 48';
         attrs.class = (attrs.class || '').replaceAll('ix-svg', '').trim();
         if (!attrs.class) delete attrs.class;
-        el.replaceWith(ix.el.ns('svg', attrs, [ixEl.ns('path', {d: expression})]));
+        el.replaceWith(ixEl.ns('svg', attrs, [ixEl.ns('path', {d: expression})]));
       }
       ixEl.svg = (el, name, expression) => {
         if (el) {
@@ -426,7 +427,7 @@ const ix = (() => {
       jsonify: () => JSON.stringify(ix.cookies.json())
     },
     popup: {
-      blocker: () => ix.el('div',{class:'popup-bg vh-100 vw-100 flex-ct pg-ct z-idx_top',style:'background:#0008;'}),
+      blocker: () => ixEl('div',{class:'popup-bg vh-100 vw-100 flex-ct pg-ct z-idx_top',style:'background:#0008;'}),
       temporaryPopups: [],
       clearTemporaryPopups() {
         while (ix.popup.temporaryPopups.length) {
@@ -440,7 +441,7 @@ const ix = (() => {
       remove(popupWindow, timeout=1000) {
         try {
           popupWindow.classList.add('locked');
-          setTimeout(ix.el.destroy, timeout, popupWindow);
+          setTimeout(ixEl.destroy, timeout, popupWindow);
           popupWindow.blocker.remove();
         } catch (e) { console.error(e) }
       },
@@ -457,8 +458,8 @@ const ix = (() => {
       message(message, options={}) {
         const buttons = options.buttons || [{}];
         const buttonsEl = buttons.map(btn => {
-          const el = ix.el(btn.tagName||'div', {class: 'popup-btn'}, [], btn.text || 'OK');
-          ix.el.addListener(el, 'click', () => {
+          const el = ixEl(btn.tagName||'div', {class: 'popup-btn'}, [], btn.text || 'OK');
+          ixEl.addListener(el, 'click', () => {
             if (btn.callback) btn.callback();
             if (options.callback) options.callback();
             ix.popup.close(popupWindow);
@@ -475,20 +476,20 @@ const ix = (() => {
             if (defaultBtn) defaultBtn.click();
           }
         };
-        const popupWindow = ix.el('div', {
+        const popupWindow = ixEl('div', {
           id: `popup-${ix.chee.random.base64(8)}`,
           class: 'pg-ct popup-window flex-ct flex-col z-idx_top'
         }, [
-          ix.el('div', {class: 'popup-message flex-ct flex-1'}, [], message || 'Oops! Something went wrong.'),
-          ix.el('div', {class: 'flex-ct'}, buttonsEl)
+          ixEl('div', {class: 'popup-message flex-ct flex-1'}, [], message || 'Oops! Something went wrong.'),
+          ixEl('div', {class: 'flex-ct'}, buttonsEl)
         ]);
         const blocker = ix.popup.blocker();
         popupWindow.blocker = blocker;
         doc.body.append(blocker, popupWindow);
         doc.activeElement.blur();
         setTimeout(() => {
-          ix.el.addListener(doc, 'keyup', closeByKeyboard);
-          if (defaultBtn) ix.el.addListener(defaultBtn, 'click', () => ix.el.rmvListener(doc, 'keyup', closeByKeyboard))
+          ixEl.addListener(doc, 'keyup', closeByKeyboard);
+          if (defaultBtn) ixEl.addListener(defaultBtn, 'click', () => ixEl.rmvListener(doc, 'keyup', closeByKeyboard))
         }, 0);
         ix.popup.clearTemporaryPopups();
         popupWindow.callback = options.callback;

@@ -35,7 +35,10 @@
     
     ix.el.addListener(emailInput, 'keyup', (e) => {
       if (!emailInput.value) return;
-      if (e.key === 'Enter') usernameInput.focus();
+      if (e.key === 'Enter') {
+        if (ix.el.isHide(usernameInput.parentElement)) passwordInput.focus();
+        else usernameInput.focus();
+      }
     });
     
     ix.el.addListener(usernameInput, 'keyup', (e) => {

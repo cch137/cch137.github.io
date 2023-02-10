@@ -1,4 +1,4 @@
-win.chee={"version":"0.39.9.20230209.16482d7.alpha","config":{"appname":"IX","sessName":"ix-sess","minifiedCodes":1,"runDcBot":1},"valid":{"unique":(arr) => [...new Set(arr)],"capitalize":function(str) {
+win.chee={"version":"0.39.51.20230210.16482d7.alpha","config":{"appname":"IX","sessName":"ix-sess","minifiedCodes":1,"runDcBot":1},"valid":{"unique":(arr) => [...new Set(arr)],"capitalize":function(str) {
       return str.charAt(0).toUpperCase() + str.slice(1);
     },"__testStr":function(str, minLength, maxLength, validReg, name, throwInvalidChars=true) {
       name = name.toLowerCase() || 'string';

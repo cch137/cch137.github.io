@@ -3,11 +3,11 @@ const path = require('path');
 const { execSync } = require('child_process');
 
 
-const ixJsPath1 = path.join(__dirname, '../iX/server/.minified/js/');
+const ixJsPath1 = path.join(__dirname, '../iX/server/.exported/js/');
 const ixJsPath2 = path.join(__dirname, '../iX/scripts/js/');
 const myJsPath1 = path.join(__dirname, 'scr/js/');
 const myJsPath2 = path.join(__dirname, 'scripts/js/');
-const ixCssPath1 = path.join(__dirname, '../iX/server/.minified/css/');
+const ixCssPath1 = path.join(__dirname, '../iX/server/.exported/css/');
 const ixCssPath2 = path.join(__dirname, '../iX/scripts/css/');
 const myCssPath1 = path.join(__dirname, 'scr/css/');
 const myCssPath2 = path.join(__dirname, 'scripts/css/');
@@ -53,6 +53,7 @@ const walkdir = (_dir, type=1) => {
 
 const fetchScripts = (scriptsPath, savedPath) => {
   walkdir(scriptsPath).forEach(sourceFilepath => {
+    if (/\/admin\//.test(sourceFilepath)) return;
     const oFilepath1 = sourceFilepath.replace(scriptsPath, savedPath);
     const oDirname1 = path.dirname(oFilepath1);
     if (!fs.existsSync(oDirname1)) fs.mkdirSync(oDirname1, {recursive: true});
