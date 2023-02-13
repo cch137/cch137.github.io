@@ -145,9 +145,9 @@
       ix.el.hide(gotoLoginBtn.parentElement);
       loginForm.insertBefore(ix.el('div', {class: 'mg-0 flex-ct flex-col sz-16'},
         [
-          ix.el('div', {class: 'tx-ct mg-t32 bold tx-ct'}, [],
+          ix.el('div', {class: 'tx-ct mg-t32 bold tx-ct'},
             'We have sent a verification code to your email, please check your inbox.'),
-            ix.el('div', {class: 'tx-ct mg-y16'}, [], 'Please enter the verification code.'),
+            ix.el('div', {class: 'tx-ct mg-y16'}, 'Please enter the verification code.'),
           vrfCodeInput.parentElement
         ]
       ), submitBtn);
@@ -155,7 +155,7 @@
       doc.body.style.setProperty('--flash-subtitles-h', '0px');
       doc.body.style.setProperty('--flash-subtitles-top', '20vh');
       loginForm.insertBefore(
-        ix.el('a', {href:`?p=signup&ea=${email}&user=${user}`, class: 'mg-t8'}, [], 'Resubmit the form'),
+        ix.el('a', {href:`?p=signup&ea=${email}&user=${user}`, class: 'mg-t8'}, 'Resubmit the form'),
         ix.el.byId('signup-hint')
       );
       submitBtn.innerText = 'Sign Up!';

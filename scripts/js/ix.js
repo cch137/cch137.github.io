@@ -3,10 +3,12 @@ const win = window, doc = document, loc = location, his = history;
 const ix = (() => {
   const nw = {
     fetchSync: async (url, options={}) => await fetch(url, options),
+
     evalFetchScript: (url) => {
       const xhr = nw.xhr.get(url,{headers:{'mode':'no-cors'},async:false,cache:'force-cache'});
       eval(xhr.responseText);
     },
+
     xhr: {
       get(url, options={}) {
         const xhr = new XMLHttpRequest();
@@ -20,7 +22,8 @@ const ix = (() => {
         xhr.send();
         return xhr;
       },
-      post: (url, data='', options={contentType:'form',async:true,responseType:''}, callback=(xhr)=>{}) => {
+
+      post(url, data='', options={contentType:'form',async:true,responseType:''}, callback=(xhr)=>{}) {
         const xhr = new XMLHttpRequest;
         xhr.open('POST', url, 'async' in options ? options.async : true);
         switch(options.contentType.toLowerCase()) {
@@ -43,6 +46,7 @@ const ix = (() => {
   };
   return {
     nw,
+
     get chee() {
       try {
         nw.evalFetchScript('/scr/js/chee.js');
@@ -56,18 +60,127 @@ const ix = (() => {
         console.warn(`Missing component: chee.js`);
       }
     },
-    io: () => {
-      try {
-        nw.evalFetchScript('/socket.io/socket.io.js');
-        ix.io = io;
-        io = null;
-        delete io;
-        const _io = ix.io();
-        return _io;
-      } catch {
-        console.warn(`Missing component: socket.io`);
+
+    io: (() => {
+      const $CONNECT = 'connect';
+      const $DISCONNECT = 'disconnect';
+      const $ERROR = 'error';
+      const $RECONNECT = 'reconnect';
+      const $RECONNECTING = 'reconnecting';
+      const $RECONNECT_ATTEMPT = 'reconnect_attempt';
+      const $RECONNECT_ERROR = 'reconnect_error';
+      const $RECONNECT_FAILED = 'reconnect_failed';
+    
+      class IO {
+        connected = false;
+        reconnecting = false;
+        reconnectTries = 0;
+        handlers = new Map();
+    
+        get reserved_events() {
+          return [
+            $CONNECT,
+            $DISCONNECT,
+            $ERROR,
+            $RECONNECT,
+            $RECONNECTING,
+            $RECONNECT_ATTEMPT,
+            $RECONNECT_ERROR,
+            $RECONNECT_FAILED
+          ];
+        }
+    
+        constructor() {
+          this.connect();
+        }
+    
+        callListeners(eventName, eventData) {
+          if (this.handlers.has(eventName)) {
+            this.handlers.get(eventName).forEach(h => {
+              try {
+                h(eventData);
+              } catch (err) {
+                console.error(err);
+              }
+            });
+          }
+        }
+        
+        on(eventName, handler=(event)=>{}) {
+          if (!this.handlers.has(eventName)) {
+            this.handlers.set(eventName, new Set([handler]));
+          } else {
+            this.handlers.get(eventName).add(handler);
+          }
+    
+          if (eventName === $CONNECT) {
+            if (this.connected) handler(this.connected);
+          }
+        }
+        
+        connect() {
+          const self = this;
+    
+          if (self.reconnectTries > 1) self.callListeners($RECONNECT_FAILED);
+          if (self.reconnecting) self.callListeners($RECONNECT_ATTEMPT);
+          const ws = new WebSocket(location.origin.replace(/^https?:\/\//, 'ws://'));
+    
+          ws.onopen = (event) => {
+            self.connected = event || true;
+            if (self.reconnecting) {
+              self.callListeners($RECONNECT, event);
+              clearInterval(self.reconnecting);
+              self.reconnecting = false;
+              self.reconnectTries = 0;
+            } else {
+              self.callListeners($CONNECT, event);
+            }
+          };
+    
+          ws.onmessage = (event) => {
+            let eventName = 'message', data = event.data;
+            try {
+              const packet = JSON.parse(data);
+              eventName = packet.event;
+              data = packet.data;
+            } catch {}
+            self.callListeners(eventName, data);
+          };
+    
+          ws.onerror = (err) => {
+            if (self.reconnecting) {
+              self.callListeners($RECONNECT_ERROR, err);
+            } else {
+              self.callListeners($ERROR, err);
+            }
+          };
+    
+          ws.onclose = (event) => {
+            self.connected = false;
+            if (!self.reconnecting) {
+              self.reconnecting = setInterval(() => {
+                self.callListeners($RECONNECTING);
+              }, 0);
+            }
+            self.reconnectTries++;
+            self.connect();
+            self.callListeners($DISCONNECT, event);
+          };
+          
+          delete this.ws;
+          this.ws = ws;
+        }
+    
+        emit(event, data) {
+          this.ws.send(JSON.stringify({
+            event, data
+          }));
+        }
       }
-    },
+    
+      return () => new IO();
+    })(),
+
     api: (() => {
       let apiSocket, connectedCallback;
       const handlers = {};
@@ -80,10 +193,13 @@ const ix = (() => {
           if (apiSocket.connected) callback();
           else connectedCallback = callback;
         },
+
         get socket() {
           return apiSocket ? apiSocket : (() => {
             apiSocket = ix.io();
-            apiSocket.emit('connectAPISocket');
+            apiSocket.on('connect', () => {
+              apiSocket.emit('connectAPISocket');
+            });
             apiSocket.on('APIResponse', ({name, data}) => {
               if (handlers[name]) return handlers[name](data);
             });
@@ -95,39 +211,151 @@ const ix = (() => {
             return apiSocket;
           })();
         },
+
         userdata(callback) {
           ix.api.setHandler('userdata', callback);
           ix.api.send('userdata');
         },
+
         setHandler(apiName, callback) {
           handlers[apiName] = callback;
         },
+
         removeHandler(apiName) {
           delete handlers[apiName];
         },
+
         send(name, data) {
           apiSocket.emit('useAPI', {name, data});
         }
       };
     })(),
     el: (() => {
-      const __elRenderer = (el, attributes={}, children=[], innerText='') => {
-        if (children && !Array.isArray(children)) children = [children];
-        if (Array.isArray(attributes.class)) attributes.class = attributes.class.join(' ');
-        for (const attr in attributes) el.setAttribute(attr, attributes[attr]);
-        if (children.length) el.append(...children);
-        if (innerText) el.innerText = innerText;
+      const EMPTY_ARR = [];
+      Object.freeze(EMPTY_ARR);
+      const {isArray} = Array;
+
+      class DynamicAttr {
+        boundElements = {};
+        value;
+
+        constructor(value) {
+          this.set(value);
+        }
+
+        set(value) {
+          const oldValue = this.value;
+          if (value === oldValue) return;
+          this.value = value;
+          for (const el in this.boundElements) {
+            try {
+              this.boundElements[el].forEach(attrName => {
+                try {
+                  if (attrName === EMPTY_ARR) {
+                    // CLASSLIST
+                    if (!isArray(value)) value = [value];
+                    oldValue.forEach(oldClass => {
+                      el.classList.remove(oldClass);
+                    });
+                    value.forEach(newClass => {
+                      el.classList.add(newClass);
+                    });
+                  } else if (attrName) {
+                    // ATTRIBUTE
+                    ixEl.setAttr(el, attrName, value);
+                  } else {
+                    // INNER TEXT
+                    ixEl.innerText = value;
+                  }
+                } catch (err) {
+                  console.error(err);
+                }
+              });
+            } catch (err) {
+              console.error(err);
+            }
+          }
+        }
+
+        bind(element, attrName=null) {
+          // 如果 attrName 為 null（默認值）
+          // --> 那麼這就是 element 的 innerText
+          // 如果 attrName 為 []
+          // --> 那麼這就是 element 的 classList 中的一部分
+          if (isArray(attrName)) attrName = EMPTY_ARR;
+          if (!this.boundElements[element]) {
+            this.boundElements[element] = new Set([attrName]);
+          } else {
+            this.boundElements[element].add(attrName);
+          }
+        }
+
+        unbind(element, attrName=null) {
+          if (this.boundElements[element]) {
+            this.boundElements[element].delete(attrName);
+            if (!this.boundElements[element].size) {
+              delete this.boundElements[element];
+            }
+          };
+        }
+
+        toString() {
+          if (isArray(this.value)) {
+            return this.value.join(' ');
+          }
+          return this.value.toString();
+        }
+      };
+
+      const x = doc.createElement('div');
+
+      const iXElRenderer = (el, attributes={}, children=[]) => {
+        if (attributes) {
+          if (isArray(attributes.class)) {
+            attributes.class.filter(i => i instanceof DynamicAttr).forEach(dy => {
+              dy.bind(el, []);
+            });
+            attributes.class = attributes.class.join(' ');
+          }
+          for (const attr in attributes) {
+            if (attributes[attr] instanceof DynamicAttr) {
+              attributes[attr].bind(el, attr);
+              attributes[attr] = attributes[attr].toString();
+            }
+            el.setAttribute(attr, attributes[attr]);
+          }
+        }
+        if (children) {
+          if (children && !isArray(children)) {
+            children = [children];
+          }
+          children.forEach((value, index) => {
+            if (value instanceof DynamicAttr) {
+              // 動態文字
+              value.bind(el);
+              value = value.toString();
+            }
+            if (typeof value === 'string') {
+              children[index] = doc.createTextNode(value);
+            }
+          });
+          el.append(...children);
+        }
         return el;
       }
-      const ixEl = (tagName='div', attributes={}, children=[], innerText='') => {
+
+      const ixEl = (tagName='div', attributes={}, children=[]) => {
         const el = doc.createElement(tagName);
-        return __elRenderer(el, attributes, children, innerText);
-      }
-      ixEl.new = ixEl;
+        return iXElRenderer(el, attributes, children);
+      };
+
+      ixEl.dy = (value) => new DynamicAttr(value);
+
       ixEl.ns = (qualifiedName='svg', attributes={}, children=[], namespaceURI = 'http:\/\/www.w3.org/2000/svg') => {
         const el = doc.createElementNS(namespaceURI, qualifiedName);
-        return __elRenderer(el, attributes, children);
+        return iXElRenderer(el, attributes, children);
       }
+
       ixEl.setAttr = (el, attr, value) => el.setAttribute(attr, value);
       ixEl.getAttr = (el, attr) => el.getAttribute(attr);
       ixEl.rmvAttr = (el, attr) => el.removeAttribute(attr);
@@ -138,7 +366,9 @@ const ix = (() => {
         });
         return attrs;
       };
+
       ixEl.collections = {};
+
       const elData = (el) => {
         if (!ixEl.collections[el]) {
           ixEl.collections[el] = {
@@ -147,44 +377,55 @@ const ix = (() => {
         }
         return ixEl.collections[el];
       };
+
       ixEl.removeData = (el) => {delete ixEl.collections[el]};
+
       ixEl.addListener = (el, eventName, handler) => {
         // if (ixEl.getListener(el, eventName)) ixEl.rmvListener(el, eventName);
         elData(el).listners[eventName] = handler;
         el.addEventListener(eventName, elData(el).listners[eventName]);
       };
+
       ixEl.rmvListener = (el, eventName, handler) => {
         el.removeEventListener(eventName, handler || elData(el).listners[eventName]);
         delete elData(el).listners[eventName];
       };
+
       ixEl.getListener = (el, eventName) => {
         el = elData(el);
         if (el) return el.listners[eventName];
         return undefined;
       }
+
       ixEl.getAllListeners = (el) => ixEl.collections[el].listners;
+
       ixEl.isHide = (el) => el.classList.contains('hidden');
       ixEl.hide = (el) => el.classList.add('hidden');
       ixEl.show = (el) => el.classList.remove('hidden');
       ixEl.lock = (el) => el.classList.add('locked');
       ixEl.unlock = (el) => el.classList.remove('locked');
+
       ixEl.childrenR = (el) => {
         const elements = [...el.children];
         const _elements = [el, ...elements];
         for (const i of elements) ixEl.childrenR(i).forEach(j => _elements.push(j));
         return _elements;
       }
+
       ixEl.destroyChildren = (el) => {
         const elements = [...el.childNodes];
         while (elements.length) elements.pop().remove();
       }
+
       ixEl.destroy = (el) => {
         ixEl.destroyChildren(el);
         el.remove();
       }
+
       ixEl.byId = (id) => doc.getElementById(id);
       ixEl.q = (selector) => doc.querySelector(selector);
       ixEl.qAll = (selector) => doc.querySelectorAll(selector);
+
       ixEl.copyBtnSetup = (btnEl, text, options={
         hintEl: 1,
         hintText: 'Copy text',
@@ -204,7 +445,8 @@ const ix = (() => {
           if (options.focusEl) try {options.focusEl.focus()} catch {};
           ixEl.lock(btnEl);
         });
-      }
+      };
+
       ixEl.setupSwitch = (el, handler, defaultValue) => {
         el.classList.add('v-switch');
         if (defaultValue) el.classList.add('on');
@@ -214,7 +456,8 @@ const ix = (() => {
           else el.classList.add('on');
           if (handler) handler(!v);
         });
-      }
+      };
+
       ixEl.blockPasteHTML = (el) => {
         try {
           const onpaste = el.onpaste || ixEl.getListener(el, 'paste');
@@ -227,6 +470,7 @@ const ix = (() => {
           console.error(e);
         }
       };
+
       ixEl.convertHyperlinks = (el) => {
         const regEx = /((https?|ftp|file):\/\/)?([-a-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}|localhost:[0-9]{4})(\/[-A-Z0-9+&@#/%?=~_|!.,:;\u0250-\uffff]{1,})?\/?(?!\w|\S)/gi;
         // const regEx = /((([A-Za-z]{3,9}:(?:\/\/)?)(?:[-;:&=\+\$,\w]+@)?[A-Za-z0-9.-]+|(?:www.|[-;:&=\+\$,\w]+@)[A-Za-z0-9.-]+)((?:\/[\+~%\/.\w-_]*)?\??(?:[-\+=&;%@.\w_]*)#?(?:[\w]*))?)/gi;
@@ -246,14 +490,14 @@ const ix = (() => {
           for (const link in collectedLinks) {
             if(link == content.substring(i, i + link.length)) {
               if (normalTextCollection !='') {
-                processedElements.push(ixEl('span', {}, [], normalTextCollection ))
+                processedElements.push(ixEl('span', 0, normalTextCollection ))
                 normalTextCollection = '';
               }
               processedElements.push(ixEl('a', {
                 href: collectedLinks[link],
                 target: '_blank',
                 rel: 'noopener noreferrer'
-              }, [], link));
+              }, link));
               i += link.length - 1;
               foundLink = true;
               break;
@@ -262,12 +506,13 @@ const ix = (() => {
           if (!foundLink) normalTextCollection += content[i];
         }
         if (normalTextCollection) {
-          processedElements.push(ixEl('span', {} , [], normalTextCollection));
+          processedElements.push(ixEl('span', 0, normalTextCollection));
         }
         el.innerHTML = '';
         el.append(...processedElements);
         return el;
-      }
+      };
+
       let elScrollTop = 0;
       ixEl.scrollToTop = (el) => {
         if (el) {
@@ -281,15 +526,18 @@ const ix = (() => {
             win.scrollTo(0, i > 1 ? i : 0);
           }
         }
-      }
+      };
+
       ixEl.imgLoadAnim = {
         controller: {
           isLoadingAnim(bgEl) {
             return bgEl.classList.contains('img-loading-bg');
           },
+          
           endLoadingProcess(bgEl) {
             bgEl.classList.remove('img-loading-processing');
           },
+
           removeLoadingAnim(bgEl) {
             bgEl.classList.add('loaded');
             setTimeout(() => {
@@ -298,24 +546,29 @@ const ix = (() => {
               ixEl.imgLoadAnim.controller.endLoadingProcess(bgEl);
             }, 500);
           },
+
           disableLoadingAnim(bgEl) {
             bgEl.style.setProperty('--transition', '0');
             bgEl.classList.remove('img-loading-bg');
             ixEl.imgLoadAnim.controller.endLoadingProcess(bgEl);
           }
         },
-        setOnloadHandle: (imgBgElement) => {
+
+        setOnloadHandle(imgBgElement) {
           if (imgBgElement.classList.contains('img-loading-processing')) return;
           imgBgElement.classList.add('img-loading-processing');
+
           const img = imgBgElement.getElementsByTagName('img')[0];
           const _next = img.onload;
           const ctrl = ixEl.imgLoadAnim.controller;
+
           const timeoutId = setTimeout(() => {
             // 修復：當圖片在被設置 onload 前就已經加載完成而沒有執行到 onload 的漏洞
             if (!img.complete) return;
             if (!ctrl.isLoadingAnim(imgBgElement)) return;
             ctrl.removeLoadingAnim(imgBgElement);
           }, 500);
+
           img.onload = () => {
             clearTimeout(timeoutId);
             if (_next) _next();
@@ -323,7 +576,8 @@ const ix = (() => {
             else ctrl.removeLoadingAnim(imgBgElement);
           }
         },
-        initAllImg: () => {
+
+        initAllImg() {
           const elements = doc.getElementsByClassName('img-loading-bg');
           if (elements.length) {
             for (const i of elements) ixEl.imgLoadAnim.setOnloadHandle(i);
@@ -331,7 +585,8 @@ const ix = (() => {
           }
           return false;
         }
-      }
+      };
+
       const renderIxSvg = (el, expression) => {
         const attrs = ixEl.getAttrs(el);
         attrs.xmlns = 'http://www.w3.org/2000/svg';
@@ -339,7 +594,8 @@ const ix = (() => {
         attrs.class = (attrs.class || '').replaceAll('ix-svg', '').trim();
         if (!attrs.class) delete attrs.class;
         el.replaceWith(ixEl.ns('svg', attrs, [ixEl.ns('path', {d: expression})]));
-      }
+      };
+
       ixEl.svg = (el, name, expression) => {
         if (el) {
           if (expression) return renderIxSvg(el, expression);
@@ -355,11 +611,13 @@ const ix = (() => {
         }
         return el;
       };
+
       ixEl.svg();
       ixEl.imgLoadAnim.initAllImg();
       Object.freeze(ixEl);
       return ixEl;
     })(),
+
     query: (() => {
       const params = new URLSearchParams(loc.search);
       const __save = (type) => {
@@ -389,6 +647,7 @@ const ix = (() => {
       Object.freeze(query);
       return query;
     })(),
+
     cookies: {
       get: (itemKey) => decodeURIComponent(doc.cookie.replace(new RegExp("(?:(?:^|.*;)\\s*" + encodeURIComponent(itemKey).replace(/[-.+*]/g, "\\$&") + "\\s*\\=\\s*([^;]*).*$)|^.*$"), "$1")) || null,
       set: (key, value, maxAge, path, domain, secure) => {
@@ -426,9 +685,12 @@ const ix = (() => {
       },
       jsonify: () => JSON.stringify(ix.cookies.json())
     },
+
     popup: {
-      blocker: () => ixEl('div',{class:'popup-bg vh-100 vw-100 flex-ct pg-ct z-idx_top',style:'background:#0008;'}),
+      blocker: () => ix.el('div',{class:'popup-bg vh-100 vw-100 flex-ct pg-ct z-idx_top',style:'background:#0008;'}),
+      
       temporaryPopups: [],
+      
       clearTemporaryPopups() {
         while (ix.popup.temporaryPopups.length) {
           try {
@@ -438,105 +700,131 @@ const ix = (() => {
           } catch {}
         }
       },
+
       remove(popupWindow, timeout=1000) {
         try {
           popupWindow.classList.add('locked');
-          setTimeout(ixEl.destroy, timeout, popupWindow);
+          setTimeout(ix.el.destroy, timeout, popupWindow);
           popupWindow.blocker.remove();
         } catch (e) { console.error(e) }
       },
+
       close(popupWindow, callback) {
         popupWindow.classList.add('closed');
         for (const btn of popupWindow.getElementsByClassName('popup-btn')) btn.style.opacity = 0;
         ix.popup.remove(popupWindow);
         if (callback) callback();
       },
+
       fade(popupWindow) {
         popupWindow.classList.add('faded');
         ix.popup.remove(popupWindow);
       },
+
       message(message, options={}) {
         const buttons = options.buttons || [{}];
+
         const buttonsEl = buttons.map(btn => {
-          const el = ixEl(btn.tagName||'div', {class: 'popup-btn'}, [], btn.text || 'OK');
-          ixEl.addListener(el, 'click', () => {
+          const el = ix.el(btn.tagName||'div', {class: 'popup-btn'}, btn.text || 'OK');
+          ix.el.addListener(el, 'click', () => {
             if (btn.callback) btn.callback();
             if (options.callback) options.callback();
             ix.popup.close(popupWindow);
           });
           return el;
         });
+
         const defaultBtn = (() => {
           if (buttonsEl.length === 0) return;
           if (buttonsEl.length === 1) return buttonsEl[0];
           for (const el of buttonsEl) if (el.innerText === 'OK') return el;
         })();
+
         const closeByKeyboard = (e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             if (defaultBtn) defaultBtn.click();
           }
         };
-        const popupWindow = ixEl('div', {
+
+        const popupWindow = ix.el('div', {
           id: `popup-${ix.chee.random.base64(8)}`,
           class: 'pg-ct popup-window flex-ct flex-col z-idx_top'
         }, [
-          ixEl('div', {class: 'popup-message flex-ct flex-1'}, [], message || 'Oops! Something went wrong.'),
-          ixEl('div', {class: 'flex-ct'}, buttonsEl)
+          ix.el('div', {class: 'popup-message flex-ct flex-1'}, message || 'Oops! Something went wrong.'),
+          ix.el('div', {class: 'flex-ct'}, buttonsEl)
         ]);
+
         const blocker = ix.popup.blocker();
         popupWindow.blocker = blocker;
-        doc.body.append(blocker, popupWindow);
-        doc.activeElement.blur();
-        setTimeout(() => {
-          ixEl.addListener(doc, 'keyup', closeByKeyboard);
-          if (defaultBtn) ixEl.addListener(defaultBtn, 'click', () => ixEl.rmvListener(doc, 'keyup', closeByKeyboard))
-        }, 0);
-        ix.popup.clearTemporaryPopups();
         popupWindow.callback = options.callback;
+        doc.body.append(blocker, popupWindow);
+
+        doc.activeElement.blur();
+
+        setTimeout(() => {
+          ix.el.addListener(doc, 'keyup', closeByKeyboard);
+          if (defaultBtn) ix.el.addListener(defaultBtn, 'click', () => ix.el.rmvListener(doc, 'keyup', closeByKeyboard))
+        }, 0);
+
+        ix.popup.clearTemporaryPopups();
+
         if (options.isTemporary) ix.popup.temporaryPopups.push(popupWindow);
+
         const durationSec = options.durationSec || 0;
+
         if (durationSec) {
           setTimeout(() => {
             if (options.callback) options.callback();
             ix.popup.fade(popupWindow);
           }, durationSec * 1000);
         }
+
         return popupWindow;
       },
+
       show(message, options={}) {
         if (!options.durationSec) options.durationSec = 1.5;
         const popupWindow = ix.popup.message(message, options={buttons: [], ...options});
         return popupWindow;
       },
+
       throw(errMessage, options={}) {
         const popupWindow = ix.popup.message(`ERROR ⇒ ${errMessage}`, options);
         popupWindow.classList.add('popup-error');
         ix.popup.clearTemporaryPopups();
       },
+
       featureNotAvailable: () => ix.popup.message('Sorry, this feature is currently not available. If you need assistance, please contact the website administrator (137emailservice@gmail.com).')
     },
+
     calcs: {
       t0: new Date(),
+
       versionParser: (s) => {
         const [major, minor, revision, date, reference, stage] = s.split('.');
         return {major, minor, revision, date, reference, stage,
           stageLvl: ['base', 'alpha', 'beta', 'rc', 'release'].indexOf(stage)};
       },
+
       randomRGBValue: (minV=0, maxV=255) => {
         const _ = (minV, maxV) => (minV + Math.random() * (maxV - minV)).toFixed(2);
         return `rgb(${_(minV,maxV)},${_(minV,maxV)},${_(minV,maxV)})`;
       },
+
       checkKeys: (obj, legalKeys=[]) => {
         for (const k of Object.keys(obj)) if (!legalKeys.includes(k)) delete obj[k];
         return obj;
       }
     },
+
     cli: {
       device: {
         isMobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
         get isTouchScreen() {return 'ontouchstart' in doc || navigator.maxTouchPoints}
       },
+
       get loadedResources() {return win.performance.getEntriesByType('resource')},
+      
       copy(text) {
         try {
           const tempElement = doc.createElement('input')
@@ -551,16 +839,20 @@ const ix = (() => {
         };
         return true;
       },
+
       local: {
         save: (data) => {
           data = ix.calcs.checkKeys(data, ['ui', 'v']);
           ix.cookies.set('ix-local', btoa(JSON.stringify(data)));
         },
+
         get data() {
           try { return JSON.parse(atob(ix.cookies.get('ix-local')) || '{}') }
           catch { return {} };
         },
+
         get: (key) => ix.cli.local.data[key],
+
         set: (key, value) => {
           const data = ix.cli.local.data;
           data[key] = value;
@@ -574,9 +866,11 @@ const ix = (() => {
 
 try {
   if (ix.query.has('fbclid')) ix.query.remove('fbclid', 1);
+
   const v = ix.chee.version;
   ix.cli.local.set('v', v);
   console.log(`%cv${v}`, `color:#0dd;`);
+
   if (ix.calcs.versionParser(v).stageLvl < 2) {
     // The current running version is a development version.
     // The page will refresh when page resources are changed or the server is restarted,

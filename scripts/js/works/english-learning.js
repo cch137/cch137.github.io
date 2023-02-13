@@ -24,9 +24,9 @@
       let built = false;
       const build = () => {
         if (built) return;
-        const clearTextareaBtn = ix.el.new('span', {class:'no-select v-btn mg-0',style:'min-width:fit-content;padding:2px 8px;'}, [], 'X');
-        const copyInputBtn = ix.el('span', {class:'no-select mg-0 txarea-btn op-075'}, [], 'Copy text');
-        const copyOutputBtn = ix.el('span', {class:'no-select mg-0 txarea-btn op-075'}, [], 'Copy text');
+        const clearTextareaBtn = ix.el('span', {class:'no-select v-btn mg-0',style:'min-width:fit-content;padding:2px 8px;'}, 'X');
+        const copyInputBtn = ix.el('span', {class:'no-select mg-0 txarea-btn op-075'}, 'Copy text');
+        const copyOutputBtn = ix.el('span', {class:'no-select mg-0 txarea-btn op-075'}, 'Copy text');
         ix.el.addListener(clearTextareaBtn, 'click', () => {
           transInputEl.value = '';
           transOutputEl.innerText = '';
@@ -53,11 +53,11 @@
           }, 300);
         });
         translateWrapper.append(...[
-          ix.el('h2', {}, [], '翻譯'),
+          ix.el('h2', 0, '翻譯'),
           ix.el('div', {id:'translate-view',class:'flex-ct w-100'}, [
             ix.el('div', {class:'flex-col flex-1 bd-1px bd-r-8 ovf-hd'}, [
               ix.el('div', {class:'w-100 flex-lf text-lf op-8',style:'padding:8px 16px'}, [
-                ix.el('span', {class:'flex-1'}, [], '偵測語言'),
+                ix.el('span', {class:'flex-1'}, '偵測語言'),
                 copyInputBtn,
                 clearTextareaBtn
               ]),
@@ -66,7 +66,7 @@
             transControl,
             ix.el('div', {class:'flex-col flex-1 bd-1px bd-r-8 ovf-hd'}, [
               ix.el('div', {class:'w-100 flex-lf text-lf',style:'padding:8px 16px'}, [
-                ix.el('span',{class:'op-075'}, ['翻譯結果：']),
+                ix.el('span',{class:'op-075'}, '翻譯結果：'),
                 transOutputLangEl,
                 copyOutputBtn
               ]),

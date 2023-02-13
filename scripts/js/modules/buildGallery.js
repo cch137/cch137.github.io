@@ -12,36 +12,37 @@ const buildGallery = (galleryTitle, contents, galleryEl) => {
           rel: 'noopener noreferrer',
           target: item.newtab ? '_blank' : '_self'
         }, [
-        ix.el('div', {
-          class: 'card-header'
-        }, [
           ix.el('div', {
-            class: 'img-loading-bg item-thumbnail-bg'
+            class: 'card-header'
           }, [
-            ix.el('img', {
-              src: item.thumbnail,
-              class: 'item-thumbnail',
-              title: item.title
-            })
-          ])
-        ]),
-        ix.el('div', {
-          class: 'card-body'
-        }, [
+            ix.el('div', {
+              class: 'img-loading-bg item-thumbnail-bg'
+            }, [
+              ix.el('img', {
+                src: item.thumbnail,
+                class: 'item-thumbnail',
+                title: item.title
+              })
+            ])
+          ]),
           ix.el('div', {
-            class: 'item-title text-ct'
-          }, [], item.title),
+            class: 'card-body'
+          }, [
+            ix.el('div', {
+              class: 'item-title text-ct'
+            }, item.title),
+            ix.el('div', {
+              class: 'item-description text-ct'
+            }, item.description)
+          ]),
           ix.el('div', {
-            class: 'item-description text-ct'
-          }, [], item.description)
-        ]),
-        ix.el('div', {
-          class: 'card-footer'
-        })
-      ]));
+            class: 'card-footer'
+          })
+        ]
+      ));
     });
     galleryElement.append(
-      ix.el('h1', {id: galleryTitle.toLowerCase(), class: 'v-gallery-title'}, [], galleryTitle),
+      ix.el('h1', {id: galleryTitle.toLowerCase(), class: 'v-gallery-title'}, galleryTitle),
       galleryBody,
       ix.el('hr')
     );

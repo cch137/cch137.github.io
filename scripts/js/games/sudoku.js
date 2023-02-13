@@ -28,7 +28,7 @@ const range = (a=null, b=null, c=null) => {
 
 
 class Sudoku {
-  constructor (legalNumbers=[1,2,3,4,5,6,7,8,9]) {
+  constructor(legalNumbers=[1,2,3,4,5,6,7,8,9]) {
     this.legalNumbers = legalNumbers;
     this.side = this.legalNumbers.length;
     this.size = Math.pow(this.side, 0.5);

@@ -1,4 +1,4 @@
-win.chee={"version":"0.39.51.20230210.16482d7.alpha","config":{"appname":"IX","sessName":"ix-sess","minifiedCodes":1,"runDcBot":1},"valid":{"unique":(arr) => [...new Set(arr)],"capitalize":function(str) {
+win.chee={"version":"0.41.23.20230212.842b05f.alpha","config":{"appname":"IX","sessName":"ix-sess","minifiedCodes":1,"runDcBot":1},"valid":{"unique":(arr) => [...new Set(arr)],"capitalize":function(str) {
       return str.charAt(0).toUpperCase() + str.slice(1);
     },"__testStr":function(str, minLength, maxLength, validReg, name, throwInvalidChars=true) {
       name = name.toLowerCase() || 'string';
@@ -80,13 +80,6 @@ win.chee={"version":"0.39.51.20230210.16482d7.alpha","config":{"appname":"IX","s
       .replace(/f/g, Math.round(dateProperties.f / 100))
       .replace(/TT/g, T)
       .replace(/T/g, T.charAt(0));
-  },"timer":() => {
-    const _timer = {
-      startTime: ix.chee.time.now(),
-      endTime: null,
-      stop: () => (_timer.endTime = ix.chee.time.now()) - _timer.startTime
-    };
-    return _timer;
   }},"escapeString":(str) => JSON.stringify(str).slice(1, -1),"trimObj":(obj) => {
     if (Array.isArray(obj)) {
       for (let i = 0; i < obj.length; i++) if (typeof obj === 'object') obj[i] = trimObj(obj[i]);

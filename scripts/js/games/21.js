@@ -19,7 +19,7 @@ const poker = {};
       chatBoxBody.scrollTop = chatBoxBody.clientHeight * 1000000;
     }
     const addChatBoxMessage = (message, className='server') => {
-      chatBoxBody.appendChild(ix.el('div', {class: className, title: ix.chee.time.format()}, [], message));
+      chatBoxBody.appendChild(ix.el('div', {class: className, title: ix.chee.time.format()}, message));
       scrollChatBox();
     }
 
@@ -302,9 +302,9 @@ const poker = {};
           class: `text-lf banker-name${localUserdata.playerId === packet.banker.id ? ' self' : ''}`,
           title: packet.banker.id
         }, [
-          ix.el('span', {}, [], `${packet.banker.username}`),
-          ix.el('span', {style:'user-select:none;'}, [], ` (莊家)`),
-          localUserdata.playerId === packet.banker.id ? ix.el('span', {class: 'you'}, [], ' (YOU)') : ''
+          ix.el('span', 0, `${packet.banker.username}`),
+          ix.el('span', {style:'user-select:none;'}, ` (莊家)`),
+          localUserdata.playerId === packet.banker.id ? ix.el('span', {class: 'you'}, ' (YOU)') : ''
         ]));
       } else {
         ix.popup.message(`警告：莊家已下線！`, {isTemporary: true});
@@ -314,8 +314,8 @@ const poker = {};
         playerListEl.appendChild(ix.el('li', {
           title: id, class: `text-lf${localUserdata.playerId === id ? ' self' : ''}`
         }, [
-          ix.el('span', {}, [], username),
-          localUserdata.playerId === id ? ix.el('span', {class: 'you'}, [], ' (YOU)') : ''
+          ix.el('span', 0, username),
+          localUserdata.playerId === id ? ix.el('span', {class: 'you'}, ' (YOU)') : ''
         ]));
       }
     }

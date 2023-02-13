@@ -52,9 +52,9 @@
       wordListEl.innerHTML = '正在加載...';
       setTimeout(() => {
         ix.el.destroyChildren(wordListEl);
-        wordListEl.append(...wordlist.map(w => ix.el('li', {}, [
-          ix.el('strong', {}, [], w[0]),
-          ix.el('div', { style: 'margin-bottom:16px' }, [], w[1])
+        wordListEl.append(...wordlist.map(w => ix.el('li', 0, [
+          ix.el('strong', 0, w[0]),
+          ix.el('div', { style: 'margin-bottom:16px' }, w[1])
         ])));
         switchContentBtn.innerText = '查看字卡';
         contentMode = 1;
@@ -99,8 +99,8 @@
     const setWord = (wordData) => {
       ix.el.destroyChildren(wordTitle);
       ix.el.destroyChildren(wordDescription);
-      wordTitle.appendChild(ix.el('span', {class: 'fadeIn', style: '--trans:.3s'}, [], wordData[0]));
-      wordDescription.appendChild(ix.el('span', {class: 'fadeIn', style: '--trans:.3s'}, [], wordData[1]));
+      wordTitle.appendChild(ix.el('span', {class: 'fadeIn', style: '--trans:.3s'}, wordData[0]));
+      wordDescription.appendChild(ix.el('span', {class: 'fadeIn', style: '--trans:.3s'}, wordData[1]));
       while (previousWordlist.length > wordlist.length) previousWordlist.shift();
       while (nextWordlist.length > wordlist.length) nextWordlist.shift();
       if (previousWordlist.length) {
