@@ -69,7 +69,7 @@ fetchScripts(ixCssPath2, myCssPath2);
 
 exec(`git pull`);
 exec(`git add .`);
-exec(`git commit -am "updated\nupdated"`);
+exec(`git commit -am "updated"`);
 exec(`git push`);
 
 console.log('Done.');
